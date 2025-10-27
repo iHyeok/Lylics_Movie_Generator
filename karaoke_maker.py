@@ -64,6 +64,22 @@ def set_clip_audio(clip, audio):
         return clip.set_audio(audio)
 
 
+def resize_clip(clip, **kwargs):
+    """MoviePy 1.x/2.x 호환 resize"""
+    if hasattr(clip, 'resized'):
+        return clip.resized(**kwargs)
+    else:
+        return clip.resize(**kwargs)
+
+
+def crop_clip(clip, **kwargs):
+    """MoviePy 1.x/2.x 호환 crop"""
+    if hasattr(clip, 'cropped'):
+        return clip.cropped(**kwargs)
+    else:
+        return clip.crop(**kwargs)
+
+
 class LyricsParser:
     """가사 파일을 파싱하고 정제하는 클래스"""
 
@@ -328,7 +344,7 @@ class VideoGenerator:
         # 배경 이미지 클립
         img_clip = ImageClip(image_path)
         img_clip = set_clip_duration(img_clip, duration)
-        img_clip = img_clip.resize(height=self.height)  # 1080p에 맞춤
+        img_clip = resize_clip(img_clip, height=self.height)  # 1080p에 맞춤
 
         # 이미지가 화면보다 작으면 중앙 배치, 크면 크롭
         if img_clip.w < self.width:
@@ -337,7 +353,7 @@ class VideoGenerator:
             # 중앙 크롭
             x_center = img_clip.w / 2
             x1 = int(x_center - self.width / 2)
-            img_clip = img_clip.crop(x1=x1, width=self.width)
+            img_clip = crop_clip(img_clip, x1=x1, width=self.width)
 
         # 자막 클립
         text_clip = self.create_text_clip(text, duration)
