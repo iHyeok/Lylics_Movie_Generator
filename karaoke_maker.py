@@ -39,6 +39,31 @@ except ImportError:
 from PIL import Image, ImageDraw, ImageFont
 
 
+# MoviePy 버전 호환성 헬퍼 함수
+def set_clip_duration(clip, duration):
+    """MoviePy 1.x/2.x 호환 duration 설정"""
+    if hasattr(clip, 'with_duration'):
+        return clip.with_duration(duration)
+    else:
+        return clip.set_duration(duration)
+
+
+def set_clip_position(clip, position):
+    """MoviePy 1.x/2.x 호환 position 설정"""
+    if hasattr(clip, 'with_position'):
+        return clip.with_position(position)
+    else:
+        return clip.set_position(position)
+
+
+def set_clip_audio(clip, audio):
+    """MoviePy 1.x/2.x 호환 audio 설정"""
+    if hasattr(clip, 'with_audio'):
+        return clip.with_audio(audio)
+    else:
+        return clip.set_audio(audio)
+
+
 class LyricsParser:
     """가사 파일을 파싱하고 정제하는 클래스"""
 
@@ -283,7 +308,10 @@ class VideoGenerator:
         img_array = np.array(img)
 
         # ImageClip 생성
-        return ImageClip(img_array).set_duration(duration).set_position(('center', self.height - 200))
+        clip = ImageClip(img_array)
+        clip = set_clip_duration(clip, duration)
+        clip = set_clip_position(clip, ('center', self.height - 200))
+        return clip
 
     def create_section_clip(self, image_path: str, text: str, duration: float) -> CompositeVideoClip:
         """
@@ -298,12 +326,13 @@ class VideoGenerator:
             CompositeVideoClip: 생성된 클립
         """
         # 배경 이미지 클립
-        img_clip = ImageClip(image_path).set_duration(duration)
+        img_clip = ImageClip(image_path)
+        img_clip = set_clip_duration(img_clip, duration)
         img_clip = img_clip.resize(height=self.height)  # 1080p에 맞춤
 
         # 이미지가 화면보다 작으면 중앙 배치, 크면 크롭
         if img_clip.w < self.width:
-            img_clip = img_clip.set_position('center')
+            img_clip = set_clip_position(img_clip, 'center')
         else:
             # 중앙 크롭
             x_center = img_clip.w / 2
@@ -353,7 +382,7 @@ class VideoGenerator:
 
         # 오디오 추가
         audio = AudioFileClip(audio_file)
-        final_clip = final_clip.set_audio(audio)
+        final_clip = set_clip_audio(final_clip, audio)
 
         # 영상 출력
         print(f"최종 영상 렌더링 중: {output_file}")
