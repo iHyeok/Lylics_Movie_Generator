@@ -49,9 +49,12 @@ wedding-karaoke/
 ├── README.md
 ├── requirements.txt
 ├── karaoke_maker.py      # 메인 스크립트
-├── audio.wav             # 입력: 오디오 파일
+├── audio
+│   ├── audio1.wav             # 입력: 오디오 파일
+│   └── ...
 ├── lyrics                # 입력: 가사 파일
 │   ├── lyrics1.txt       
+│   └── ...
 ├── images/               # 입력: 배경 이미지 (보안상 ignore 처리)
 │   ├── 01.jpg
 │   ├── 02.jpg
