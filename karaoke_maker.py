@@ -13,14 +13,29 @@ from pathlib import Path
 from typing import List, Dict, Tuple
 import whisper
 import numpy as np
-from moviepy.editor import (
-    VideoClip,
-    AudioFileClip,
-    ImageClip,
-    CompositeVideoClip,
-    TextClip,
-    concatenate_videoclips
-)
+
+# MoviePy 2.x import
+try:
+    # MoviePy 2.x
+    from moviepy import (
+        VideoClip,
+        AudioFileClip,
+        ImageClip,
+        CompositeVideoClip,
+        TextClip,
+        concatenate_videoclips
+    )
+except ImportError:
+    # MoviePy 1.x fallback
+    from moviepy.editor import (
+        VideoClip,
+        AudioFileClip,
+        ImageClip,
+        CompositeVideoClip,
+        TextClip,
+        concatenate_videoclips
+    )
+
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -194,9 +209,9 @@ class VideoGenerator:
 
         return images
 
-    def create_text_clip(self, text: str, duration: float, font_size: int = 60) -> TextClip:
+    def create_text_clip(self, text: str, duration: float, font_size: int = 60):
         """
-        자막 클립 생성
+        자막 클립 생성 (Pillow 사용)
 
         Args:
             text: 표시할 텍스트
@@ -204,19 +219,71 @@ class VideoGenerator:
             font_size: 폰트 크기
 
         Returns:
-            TextClip: 생성된 자막 클립
+            ImageClip: 생성된 자막 클립
         """
-        return TextClip(
-            text,
-            fontsize=font_size,
-            color='white',
-            font='NanumGothic-Bold',  # 한글 폰트
-            stroke_color='black',
-            stroke_width=2,
-            method='caption',
-            size=(self.width - 200, None),  # 좌우 여백
-            align='center'
-        ).set_duration(duration).set_position(('center', self.height - 200))
+        # Pillow로 텍스트 이미지 생성
+        text_width = self.width - 200
+
+        # 폰트 로드 (시스템 폰트 경로에서 찾기)
+        font = None
+        font_paths = [
+            '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf',
+            '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
+            'C:\\Windows\\Fonts\\malgun.ttf',  # Windows
+            '/System/Library/Fonts/AppleSDGothicNeo.ttc',  # macOS
+            '/Library/Fonts/NanumGothicBold.ttf',  # macOS
+        ]
+
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                try:
+                    font = ImageFont.truetype(font_path, font_size)
+                    break
+                except:
+                    continue
+
+        if font is None:
+            # 기본 폰트 사용
+            font = ImageFont.load_default()
+
+        # 텍스트를 여러 줄로 분리
+        lines = text.split('\n')
+
+        # 각 줄의 크기 계산
+        line_heights = []
+        line_widths = []
+        for line in lines:
+            bbox = font.getbbox(line)
+            line_widths.append(bbox[2] - bbox[0])
+            line_heights.append(bbox[3] - bbox[1])
+
+        # 전체 텍스트 이미지 크기
+        total_height = sum(line_heights) + (len(lines) - 1) * 10  # 줄 간격 10px
+        max_width = max(line_widths) if line_widths else text_width
+
+        # 투명 배경 이미지 생성
+        img = Image.new('RGBA', (max_width + 20, total_height + 20), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        # 텍스트 그리기 (외곽선 + 텍스트)
+        y_offset = 10
+        for line, line_width in zip(lines, line_widths):
+            x_offset = (max_width - line_width) // 2 + 10  # 중앙 정렬
+
+            # 외곽선 (검은색)
+            for dx, dy in [(-2,-2), (-2,2), (2,-2), (2,2), (-2,0), (2,0), (0,-2), (0,2)]:
+                draw.text((x_offset + dx, y_offset + dy), line, font=font, fill='black')
+
+            # 텍스트 (흰색)
+            draw.text((x_offset, y_offset), line, font=font, fill='white')
+
+            y_offset += line_heights[lines.index(line)] + 10
+
+        # NumPy 배열로 변환
+        img_array = np.array(img)
+
+        # ImageClip 생성
+        return ImageClip(img_array).set_duration(duration).set_position(('center', self.height - 200))
 
     def create_section_clip(self, image_path: str, text: str, duration: float) -> CompositeVideoClip:
         """
