@@ -74,18 +74,44 @@ wedding-karaoke/
 pip install -r requirements.txt
 ```
 
-### 2. 파일 준비
-- `audio.wav`: 노래 파일
-- `lyrics.txt`: 가사 파일
-- `images/`: 배경 사진들
-
-### 3. 실행
+### 2. 한글 폰트 설치 (Linux)
 ```bash
-python karaoke_maker.py
+chmod +x install_fonts.sh
+./install_fonts.sh
 ```
 
-### 4. 결과 확인
-`output/wedding_karaoke.mp4` 파일 생성됨
+macOS나 Windows에서는 Nanum 폰트를 수동으로 설치해주세요:
+- **macOS**: https://hangeul.naver.com/2017/nanum
+- **Windows**: https://hangeul.naver.com/2017/nanum
+
+### 3. 파일 준비
+프로젝트 디렉토리에 다음 파일들을 준비합니다:
+
+```bash
+# 오디오 파일을 audio 폴더에 복사
+cp /path/to/your/song.wav audio/
+
+# 가사 파일을 lyrics 폴더에 복사
+cp /path/to/your/lyrics.txt lyrics/
+
+# 배경 이미지들을 images 폴더에 복사
+cp /path/to/your/images/*.jpg images/
+```
+
+### 4. 실행
+```bash
+# 기본 사용법
+python karaoke_maker.py audio/song.wav lyrics/lyrics.txt
+
+# 출력 파일명 지정
+python karaoke_maker.py audio/song.wav lyrics/lyrics.txt output/my_video.mp4
+
+# 이미지 폴더 지정 (기본값: images/)
+python karaoke_maker.py audio/song.wav lyrics/lyrics.txt output/my_video.mp4 sample_images
+```
+
+### 5. 결과 확인
+지정한 출력 경로에 영상 파일이 생성됩니다 (기본값: `output/karaoke_video.mp4`)
 
 ## 출력 사양
 
@@ -114,6 +140,92 @@ python karaoke_maker.py
 - Python 3.8 이상
 - 충분한 메모리 (Whisper 모델 로딩 시 필요)
 - GPU 권장 (CPU도 가능하나 느림)
+
+## 주요 기능 상세
+
+### Whisper 모델 선택
+
+스크립트는 기본적으로 `base` 모델을 사용합니다. 필요에 따라 모델을 변경할 수 있습니다:
+
+- **tiny**: 가장 빠름, 정확도 낮음
+- **base**: 균형 잡힌 성능 (기본값)
+- **small**: 더 나은 정확도
+- **medium**: 높은 정확도, 느림
+- **large**: 최고 정확도, 매우 느림
+
+모델 변경은 `karaoke_maker.py`의 `WhisperTimingExtractor` 초기화 부분에서 수정:
+```python
+extractor = WhisperTimingExtractor(model_name="small")  # 또는 medium, large
+```
+
+### 가사 포맷 가이드
+
+최적의 결과를 위한 가사 작성 팁:
+
+1. **한 줄 = 한 화면**: 너무 긴 줄은 화면에 맞게 나눠주세요
+2. **빈 줄 = 장면 전환**: 배경 이미지가 바뀔 구간에 빈 줄 추가
+3. **라벨 자동 제거**: (Verse), (Chorus) 등은 자동으로 제거됨
+4. **특수문자 주의**: 이모지나 특수문자는 폰트에 따라 표시되지 않을 수 있음
+
+## 문제 해결
+
+### 한글이 표시되지 않는 경우
+
+1. 한글 폰트가 설치되어 있는지 확인:
+   ```bash
+   fc-list | grep -i nanum
+   ```
+
+2. 폰트가 없다면 설치:
+   ```bash
+   ./install_fonts.sh
+   ```
+
+3. 다른 폰트 사용하려면 `karaoke_maker.py`에서 폰트명 변경:
+   ```python
+   font='NanumGothic-Bold'  # 원하는 폰트명으로 변경
+   ```
+
+### Whisper 타이밍이 맞지 않는 경우
+
+1. **더 큰 모델 사용**: small 또는 medium 모델 시도
+2. **가사 수정**: Whisper가 인식한 텍스트와 가사 파일을 비교하여 수정
+3. **오디오 품질**: 노이즈가 적고 명확한 오디오 사용
+
+### 메모리 부족 오류
+
+1. **더 작은 모델**: tiny 또는 base 모델 사용
+2. **이미지 크기**: 배경 이미지를 미리 리사이즈 (권장: 1920x1080)
+3. **프로세스 수**: MoviePy의 threads 옵션 조정
+
+### 영상 생성이 느린 경우
+
+1. **Whisper 모델**: base 또는 tiny 모델 사용
+2. **MoviePy preset**: 'ultrafast' 또는 'veryfast'로 변경
+3. **해상도 조정**: 1280x720으로 낮추기
+
+## 고급 사용법
+
+### 커스터마이징
+
+`karaoke_maker.py`를 직접 수정하여 다음을 변경할 수 있습니다:
+
+- 자막 크기, 색상, 위치
+- 영상 해상도 및 프레임레이트
+- 이미지 전환 효과
+- 폰트 스타일
+
+### 배치 처리
+
+여러 곡을 한 번에 처리하는 간단한 쉘 스크립트:
+
+```bash
+#!/bin/bash
+for audio in audio/*.wav; do
+    name=$(basename "$audio" .wav)
+    python karaoke_maker.py "$audio" "lyrics/${name}.txt" "output/${name}.mp4"
+done
+```
 
 ## 라이선스
 
