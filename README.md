@@ -52,7 +52,11 @@ wedding-karaoke/
 ├── audio.wav             # 입력: 오디오 파일
 ├── lyrics                # 입력: 가사 파일
 │   ├── lyrics1.txt       
-├── images/               # 입력: 배경 이미지
+├── images/               # 입력: 배경 이미지 (보안상 ignore 처리)
+│   ├── 01.jpg
+│   ├── 02.jpg
+│   └── ...
+├── sample_images/               # 입력: 배경 이미지 (클로드 코드 테스트 용 샘플)
 │   ├── 01.jpg
 │   ├── 02.jpg
 │   └── ...

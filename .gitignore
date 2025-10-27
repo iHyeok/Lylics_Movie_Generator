@@ -218,3 +218,6 @@ output/
 
 # Whisper cache
 ~/.cache/whisper/
+
+# Images (optional - 실제 웨딩 사진은 private)
+images/
